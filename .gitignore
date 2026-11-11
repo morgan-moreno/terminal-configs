@@ -1,0 +1,16 @@
+# Allow-list: ~/.config holds many apps' state (some with credentials), so
+# only the directories below are tracked. Add a `!/<dir>/` line to track more.
+/*
+!/.gitignore
+!/README.md
+!/bootstrap/
+!/nvim/
+!/tmux/
+!/iterm2/
+!/1Password/
+
+.DS_Store
+
+iterm2/AppSupport
+iterm2/sockets/
+iterm2/profiles/

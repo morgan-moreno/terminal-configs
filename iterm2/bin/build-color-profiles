@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly config_dir
+readonly colors_dir="$config_dir/colors"
+readonly output_file="$config_dir/profiles/colors.json"
+readonly dynamic_profiles_dir="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
+readonly link_path="$dynamic_profiles_dir/colors.json"
+
+usage() {
+  cat >&2 <<EOF
+usage: $(basename "$0") [-p parent_profile]
+
+Builds an iTerm2 Dynamic Profile for every .itermcolors file in
+$colors_dir
+and links the result into iTerm2's DynamicProfiles directory.
+
+  -p  profile that generated profiles inherit non-color settings from (default: Light)
+EOF
+}
+
+# Stable per-name GUID so a re-run updates the existing profile instead of
+# creating a new one and orphaning windows that use the old GUID.
+guid_for() {
+  local hash
+  hash="$(printf 'iterm2-colors:%s' "$1" | shasum -a 1 | cut -c1-32 | tr 'a-f' 'A-F')"
+  printf '%s-%s-%s-%s-%s' "${hash:0:8}" "${hash:8:4}" "${hash:12:4}" "${hash:16:4}" "${hash:20:12}"
+}
+
+main() {
+  local parent="Light"
+  local opt
+  while getopts ":p:h" opt; do
+    case "$opt" in
+      p) parent="$OPTARG" ;;
+      h) usage; exit 0 ;;
+      *) usage; exit 2 ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+  if [[ $# -ne 0 || -z "$parent" ]]; then
+    usage
+    exit 2
+  fi
+
+  local dep
+  for dep in plutil jq shasum; do
+    command -v "$dep" >/dev/null || { echo "error: $dep is required" >&2; exit 1; }
+  done
+
+  shopt -s nullglob
+  local schemes=("$colors_dir"/*.itermcolors)
+  if [[ ${#schemes[@]} -eq 0 ]]; then
+    echo "error: no .itermcolors files in $colors_dir" >&2
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$output_file")" "$dynamic_profiles_dir"
+
+  local tmp
+  tmp="$(mktemp "$(dirname "$output_file")/.colors.json.XXXXXX")"
+  trap 'rm -f "${tmp:-}"' EXIT
+
+  local file name
+  for file in "${schemes[@]}"; do
+    name="$(basename "$file" .itermcolors)"
+    plutil -convert json -o - "$file" \
+      | jq --arg name "$name" --arg guid "$(guid_for "$name")" --arg parent "$parent" \
+          '. + {"Name": $name, "Guid": $guid, "Dynamic Profile Parent Name": $parent}'
+  done | jq -s '{"Profiles": .}' >"$tmp"
+
+  # iTerm watches the directory, so swap the file in atomically rather than
+  # letting it read a half-written one.
+  mv "$tmp" "$output_file"
+
+  if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+    echo "error: $link_path exists and is not a symlink; move it aside first" >&2
+    exit 1
+  fi
+  ln -sfn "$output_file" "$link_path"
+
+  echo "wrote ${#schemes[@]} profile(s) to $output_file (parent: $parent)" >&2
+}
+
+main "$@"
