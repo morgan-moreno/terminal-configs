@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Prints "✻ 5H <used>% 7D <used>%" from the cache written by ~/.claude/statusline-usage-cache.sh.
+# Prints "✻ 5H <used>% 7D <used>%" from the cache written by ~/.claude/statusline.sh.
 set -euo pipefail
 
 PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-cache_file="${XDG_CACHE_HOME:-$HOME/.cache}/claude/usage.json"
+cache_file="${XDG_CACHE_HOME:-$HOME/.cache}/claude-usage/usage.json"
 stale_after=1800
 
 [[ -r "$cache_file" ]] || exit 0
