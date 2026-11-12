@@ -30,3 +30,7 @@
 #  https://developer.1password.com/docs/ssh/agent/config
 [[ssh-keys]]
 vault = "Development"
+
+[[ssh-keys]]
+item = "Github - WGFS"
+vault = "Employee"
