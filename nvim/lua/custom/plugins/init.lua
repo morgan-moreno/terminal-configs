@@ -10,5 +10,7 @@ require 'custom.plugins.colors' -- fills ANSI-color gaps; nvim/init.lua relies o
 
 -- `documentation` and `notes` both configure obsidian.nvim and render-markdown.nvim.
 -- Enable only ONE of them.
-require 'custom.plugins.documentation'
--- require 'custom.plugins.notes'
+-- require 'custom.plugins.documentation'
+require 'custom.plugins.notes'
+
+require 'custom.plugins.csvview'
