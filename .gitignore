@@ -16,3 +16,7 @@ iterm2/sockets/
 iterm2/profiles/
 iterm2/cc-status
 iterm2/it2
+
+1Password/telemetry-enabled
+
+**/docs/
